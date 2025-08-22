@@ -25,6 +25,24 @@ try {
     console.error('Failed to connect to the database:', error);
   }
 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static("build"));
+
+
+app.post("/books", async (req: Request, res: Response) => {
+  try {
+    const result = await db.query(
+      "INSERT INTO books (name) VALUES ($1) RETURNING *", [req.body.name]
+    );
+    res.status(201).json(result.rows[0])
+  } 
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error"})
+  }
+})
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`)
 })
