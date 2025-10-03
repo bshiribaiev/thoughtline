@@ -15,7 +15,7 @@ const db = new pg.Client({
     host: "localhost",
     database: "thoughtline",
     password: dbPass,
-    port: 5433,
+    port: 5432,
 });
 
 try {
@@ -28,7 +28,6 @@ try {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("build"));
-
 
 app.post("/books", async (req: Request, res: Response) => {
   try {
