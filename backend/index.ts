@@ -44,6 +44,17 @@ app.post("/books", async (req: Request, res: Response) => {
   }
 })
 
+// Get all books
+app.get("/books", async (req: Request, res: Response) => {
+  try {
+    const result = await db.query("SELECT * FROM books ORDER BY created_at DESC");
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // Insert a note into book_notes table
 app.post("/books/:bookId/notes", async (req: Request, res: Response) => {
   try {
@@ -61,6 +72,21 @@ app.post("/books/:bookId/notes", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Database error" })
   }
 })
+
+// Get all notes for a book
+app.get("/books/:bookId/notes", async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const result = await db.query(
+      "SELECT * FROM book_notes WHERE book_id = $1 ORDER BY note_date DESC",
+      [bookId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`)
