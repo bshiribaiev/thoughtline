@@ -18,6 +18,7 @@ const db = new pg.Client({
     port: 5432,
 });
 
+// Test database connection
 try {
     await db.connect();
     console.log('Successfully connected to the database!');
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("build"));
 
+// Insert a book into books table
 app.post("/books", async (req: Request, res: Response) => {
   try {
     const result = await db.query(
@@ -39,6 +41,24 @@ app.post("/books", async (req: Request, res: Response) => {
   catch (error) {
     console.error(error);
     res.status(500).json({ error: "Database error"})
+  }
+})
+
+// Insert a note into book_notes table
+app.post("/books/:bookId/notes", async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const { content, note_date } = req.body;
+
+    const result = await db.query(
+      `INSERT INTO book_notes (book_id, content, note_date) VALUES ($1, $2, 
+      COALESCE($3, CURRENT_DATE)) RETURNING *`, [bookId, content, note_date]
+    );
+    res.status(201).json(result.rows[0]);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" })
   }
 })
 
