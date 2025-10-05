@@ -10,6 +10,7 @@ const port = 3001;
 const dbUser = process.env.DB_USER;
 const dbPass = process.env.DB_PASSWORD;
 
+// Create a client to connect to postgres
 const db = new pg.Client({
     user: dbUser,
     host: "localhost",
@@ -80,6 +81,35 @@ app.get("/books/:bookId/notes", async (req: Request, res: Response) => {
     const result = await db.query(
       "SELECT * FROM book_notes WHERE book_id = $1 ORDER BY note_date DESC",
       [bookId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Create a thought
+app.post("/thoughts", async (req: Request, res: Response) => {
+  try {
+    const { content, thought_date } = req.body;
+    const result = await db.query(
+      `INSERT INTO thoughts (content, thought_date) 
+       VALUES ($1, COALESCE($2, CURRENT_DATE)) RETURNING *`,
+      [content, thought_date]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Get all thoughts
+app.get("/thoughts", async (req: Request, res: Response) => {
+  try {
+    const result = await db.query(
+      "SELECT * FROM thoughts ORDER BY thought_date DESC LIMIT 50"
     );
     res.json(result.rows);
   } catch (error) {
