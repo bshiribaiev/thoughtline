@@ -56,6 +56,24 @@ app.get("/books", async (req: Request, res: Response) => {
   }
 });
 
+// Get a single book by ID
+app.get("/books/:bookId", async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const result = await db.query(
+      "SELECT * FROM books WHERE id = $1",
+      [bookId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // Insert a note into book_notes table
 app.post("/books/:bookId/notes", async (req: Request, res: Response) => {
   try {
@@ -93,7 +111,7 @@ app.get("/books/:bookId/notes", async (req: Request, res: Response) => {
 app.post("/thoughts", async (req: Request, res: Response) => {
   try {
     const { content, thought_date } = req.body;
-    const result = await db.query(
+    const result = await db.query( 
       `INSERT INTO thoughts (content, thought_date) 
        VALUES ($1, COALESCE($2, CURRENT_DATE)) RETURNING *`,
       [content, thought_date]
@@ -112,6 +130,42 @@ app.get("/thoughts", async (req: Request, res: Response) => {
       "SELECT * FROM thoughts ORDER BY thought_date DESC LIMIT 50"
     );
     res.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Get a single thought by ID
+app.get("/thoughts/:thoughtId", async (req: Request, res: Response) => {
+  try {
+    const { thoughtId } = req.params;
+    const result = await db.query(
+      "SELECT * FROM thoughts WHERE id = $1",
+      [thoughtId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Thought not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Get a single note by ID
+app.get("/notes/:noteId", async (req: Request, res: Response) => {
+  try {
+    const { noteId } = req.params;
+    const result = await db.query(
+      "SELECT * FROM book_notes WHERE id = $1",
+      [noteId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Database error" });
