@@ -74,6 +74,43 @@ app.get("/books/:bookId", async (req: Request, res: Response) => {
   }
 });
 
+// Update a book
+app.put("/books/:bookId", async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const { name } = req.body;
+    const result = await db.query(
+      "UPDATE books SET name = $1 WHERE id = $2 RETURNING *",
+      [name, bookId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Delete a book (and all its notes due to CASCADE)
+app.delete("/books/:bookId", async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const result = await db.query(
+      "DELETE FROM books WHERE id = $1 RETURNING *",
+      [bookId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Book not found" });
+    }
+    res.json({ message: "Book deleted successfully", book: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // Insert a note into book_notes table
 app.post("/books/:bookId/notes", async (req: Request, res: Response) => {
   try {
@@ -154,6 +191,46 @@ app.get("/thoughts/:thoughtId", async (req: Request, res: Response) => {
   }
 });
 
+// Update a thought
+app.put("/thoughts/:thoughtId", async (req: Request, res: Response) => {
+  try {
+    const { thoughtId } = req.params;
+    const { content, thought_date } = req.body;
+    const result = await db.query(
+      `UPDATE thoughts 
+       SET content = COALESCE($1, content), 
+           thought_date = COALESCE($2, thought_date) 
+       WHERE id = $3 RETURNING *`,
+      [content, thought_date, thoughtId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Thought not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Delete a thought
+app.delete("/thoughts/:thoughtId", async (req: Request, res: Response) => {
+  try {
+    const { thoughtId } = req.params;
+    const result = await db.query(
+      "DELETE FROM thoughts WHERE id = $1 RETURNING *",
+      [thoughtId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Thought not found" });
+    }
+    res.json({ message: "Thought deleted successfully", thought: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 // Get a single note by ID
 app.get("/notes/:noteId", async (req: Request, res: Response) => {
   try {
@@ -166,6 +243,46 @@ app.get("/notes/:noteId", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Note not found" });
     }
     res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Update a note
+app.put("/notes/:noteId", async (req: Request, res: Response) => {
+  try {
+    const { noteId } = req.params;
+    const { content, note_date } = req.body;
+    const result = await db.query(
+      `UPDATE book_notes 
+       SET content = COALESCE($1, content), 
+           note_date = COALESCE($2, note_date) 
+       WHERE id = $3 RETURNING *`,
+      [content, note_date, noteId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Delete a note
+app.delete("/notes/:noteId", async (req: Request, res: Response) => {
+  try {
+    const { noteId } = req.params;
+    const result = await db.query(
+      "DELETE FROM book_notes WHERE id = $1 RETURNING *",
+      [noteId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Note not found" });
+    }
+    res.json({ message: "Note deleted successfully", note: result.rows[0] });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Database error" });
