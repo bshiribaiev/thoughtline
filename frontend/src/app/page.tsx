@@ -14,6 +14,7 @@ export default function Page() {
   const [noteContent, setNoteContent] = useState("");
   const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [thoughtContent, setThoughtContent] = useState("");
+  const [showSidebar, setShowSidebar] = useState(true);
 
   async function loadBooks() {
     const res = await fetch("/api/books", { cache: "no-store" });
@@ -77,71 +78,74 @@ export default function Page() {
 
   return (
     <main className={styles.main}>
-      <section>
-        <h2>Books</h2>
-        <form onSubmit={handleCreateBook} className={styles.formRow}>
-          <input
-            className={styles.input}
-            placeholder="New book name"
-            value={bookName}
-            onChange={(e) => setBookName(e.target.value)}
-          />
-          <button className={styles.button} type="submit">Add Book</button>
-        </form>
 
-        <ul>
-          {books.map((b) => (
-            <li key={b.id}>
-              <button className={styles.linkButton} onClick={() => { handleSelectBook(b.id); }}>
-                {b.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className={styles.content}>
+        <section>
+          <h2>Books</h2>
+          <form onSubmit={handleCreateBook} className={styles.formRow}>
+            <input
+              className={styles.input}
+              placeholder="New book name"
+              value={bookName}
+              onChange={(e) => setBookName(e.target.value)}
+            />
+            <button className={styles.button} type="submit">Add Book</button>
+          </form>
 
-      <section>
-        <h2>Notes {selectedBookId ? `(Book ${selectedBookId})` : ""}</h2>
-        {selectedBookId && (
-          <>
-            <form onSubmit={handleCreateNote} className={styles.formRow}>
-              <input
-                className={styles.input}
-                placeholder="New note"
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-              />
-              <button className={styles.button} type="submit">Add Note</button>
-            </form>
+          <ul>
+            {books.map((b) => (
+              <li key={b.id}>
+                <button className={styles.linkButton} onClick={() => { handleSelectBook(b.id); }}>
+                  {b.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-            <ul>
-              {notes.map((n) => (
-                <li key={n.id}>{n.note_date}: {n.content}</li>
-              ))}
-            </ul>
-          </>
-        )}
-        {!selectedBookId && <p>Select a book to view/add notes.</p>}
-      </section>
+        <section>
+          <h2>Notes {selectedBookId ? `(Book ${selectedBookId})` : ""}</h2>
+          {selectedBookId && (
+            <>
+              <form onSubmit={handleCreateNote} className={styles.formRow}>
+                <input
+                  className={styles.input}
+                  placeholder="New note"
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
+                />
+                <button className={styles.button} type="submit">Add Note</button>
+              </form>
 
-      <section>
-        <h2>Thoughts</h2>
-        <form onSubmit={handleCreateThought} className={styles.formRow}>
-          <input
-            className={styles.input}
-            placeholder="New thought"
-            value={thoughtContent}
-            onChange={(e) => setThoughtContent(e.target.value)}
-          />
-          <button className={styles.button} type="submit">Add Thought</button>
-        </form>
+              <ul>
+                {notes.map((n) => (
+                  <li key={n.id}>{n.note_date}: {n.content}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {!selectedBookId && <p>Select a book to view/add notes.</p>}
+        </section>
 
-        <ul>
-          {thoughts.map((t) => (
-            <li key={t.id}>{t.thought_date}: {t.content}</li>
-          ))}
-        </ul>
-      </section>
+        <section>
+          <h2>Thoughts</h2>
+          <form onSubmit={handleCreateThought} className={styles.formRow}>
+            <input
+              className={styles.input}
+              placeholder="New thought"
+              value={thoughtContent}
+              onChange={(e) => setThoughtContent(e.target.value)}
+            />
+            <button className={styles.button} type="submit">Add Thought</button>
+          </form>
+
+          <ul>
+            {thoughts.map((t) => (
+              <li key={t.id}>{t.thought_date}: {t.content}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }

@@ -19,3 +19,38 @@ body {
   margin: 0;
   padding: 0;
 }
+
+.appShell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.siteSidebar {
+  flex: 0 0 260px;           
+  padding: 16px;             
+  margin-right: 16px;        
+  border-right: 1px solid #eee;
+  background: #fafafa;
+}
+
+.sidebarToggle {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f5f5f5;
+  cursor: pointer;
+}
+
+.sidebarToggle.show {
+  position: fixed;
+  top: 16px;
+  left: 16px;               
+}
+
+.siteContent {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 24px;
+}

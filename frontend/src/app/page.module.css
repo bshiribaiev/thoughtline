@@ -30,3 +30,9 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+.layout {
+  display: flex;
+  gap: 16px;
+}
+
