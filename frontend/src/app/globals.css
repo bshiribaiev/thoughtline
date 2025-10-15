@@ -31,22 +31,40 @@ body {
   margin-right: 16px;        
   border-right: 1px solid #eee;
   background: #fafafa;
+
+}
+
+.siteSidebar nav {
+  margin-top: 48px; 
 }
 
 .sidebarToggle {
   display: inline-block;
-  margin-bottom: 12px;
   padding: 6px 10px;
-  border: 1px solid #ccc;
   border-radius: 4px;
   background: #f5f5f5;
   cursor: pointer;
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  margin-bottom: 12px;
+}
+
+.sidebarToggle:hover {
+  background: lightgray;
 }
 
 .sidebarToggle.show {
+  background: white;
+  border: none;
   position: fixed;
-  top: 16px;
-  left: 16px;               
+  top: 8px;
+  left: 8px;     
+}          
+
+
+.sidebarToggle.show:hover {
+  background: #f5f5f5;          
 }
 
 .siteContent {
