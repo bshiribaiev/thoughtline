@@ -4,7 +4,6 @@ import styles from "./page.module.css";
 
 type Book = { id: number; name: string; created_at: string };
 type Note = { id: number; book_id: number; content: string; note_date: string };
-type Thought = { id: number; content: string; thought_date: string };
 
 export default function Page() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -12,9 +11,6 @@ export default function Page() {
   const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [noteContent, setNoteContent] = useState("");
-  const [thoughts, setThoughts] = useState<Thought[]>([]);
-  const [thoughtContent, setThoughtContent] = useState("");
-  const [showSidebar, setShowSidebar] = useState(true);
 
   async function loadBooks() {
     const res = await fetch("/api/books", { cache: "no-store" });
@@ -24,11 +20,6 @@ export default function Page() {
   async function loadNotes(bookId: number) {
     const res = await fetch(`/api/books/${bookId}/notes`, { cache: "no-store" });
     setNotes(await res.json());
-  }
-
-  async function loadThoughts() {
-    const res = await fetch("/api/thoughts", { cache: "no-store" });
-    setThoughts(await res.json());
   }
 
   // Handlers and UI logic
@@ -60,20 +51,8 @@ export default function Page() {
     await loadNotes(selectedBookId);
   }
 
-  async function handleCreateThought(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    await fetch("/api/thoughts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: thoughtContent }),
-    });
-    setThoughtContent("");
-    await loadThoughts();
-  }
-
   useEffect(() => {
     loadBooks();
-    loadThoughts();
   }, []);
 
   return (
@@ -127,24 +106,7 @@ export default function Page() {
           {!selectedBookId && <p>Select a book to view/add notes.</p>}
         </section>
 
-        <section>
-          <h2>Thoughts</h2>
-          <form onSubmit={handleCreateThought} className={styles.formRow}>
-            <input
-              className={styles.input}
-              placeholder="New thought"
-              value={thoughtContent}
-              onChange={(e) => setThoughtContent(e.target.value)}
-            />
-            <button className={styles.button} type="submit">Add Thought</button>
-          </form>
-
-          <ul>
-            {thoughts.map((t) => (
-              <li key={t.id}>{t.thought_date}: {t.content}</li>
-            ))}
-          </ul>
-        </section>
+        
       </div>
     </main>
   );

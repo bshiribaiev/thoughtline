@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
@@ -16,9 +17,9 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
           </button>
           <nav>
             <ul>
-              <li><a href="#">All Books</a></li>
+              <li><Link href="thoughts">Thoughts</Link></li>
               <li><a href="#">Notes</a></li>
-              <li><a href="#">Thoughts</a></li>
+              <li><a href="books">Books</a></li>
             </ul>
           </nav>
         </aside>
