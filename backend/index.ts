@@ -118,17 +118,20 @@ app.post("/books/:bookId/notes", async (req: Request, res: Response) => {
     const { bookId } = req.params;
     const { content, note_date } = req.body;
 
+    const embedding = await embedText(content);
+
     const result = await db.query(
-      `INSERT INTO book_notes (book_id, content, note_date) VALUES ($1, $2, 
-      COALESCE($3, CURRENT_DATE)) RETURNING *`, [bookId, content, note_date]
+      `INSERT INTO book_notes (book_id, content, note_date, embedding)
+       VALUES ($1, $2, COALESCE($3, CURRENT_DATE), $4::vector)
+       RETURNING *`,
+      [bookId, content, note_date, toPgVectorLiteral(embedding)]
     );
     res.status(201).json(result.rows[0]);
-  }
-  catch (error) {
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Database error" })
+    res.status(500).json({ error: "Database error" });
   }
-})
+});
 
 // Get all notes for a book
 app.get("/books/:bookId/notes", async (req: Request, res: Response) => {
@@ -201,17 +204,34 @@ app.put("/thoughts/:thoughtId", async (req: Request, res: Response) => {
   try {
     const { thoughtId } = req.params;
     const { content, thought_date } = req.body;
-    const result = await db.query(
-      `UPDATE thoughts 
-       SET content = COALESCE($1, content), 
-           thought_date = COALESCE($2, thought_date) 
-       WHERE id = $3 RETURNING *`,
-      [content, thought_date, thoughtId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Thought not found" });
+
+    // Only generate embedding if content is provided
+    if (typeof content === "string" && content.trim() !== "") {
+      const embedding = await embedText(content);
+      const result = await db.query(
+        `UPDATE thoughts 
+         SET content = $1, 
+             thought_date = COALESCE($2, thought_date),
+             embedding = $3::vector
+         WHERE id = $4 RETURNING *`,
+        [content, thought_date, toPgVectorLiteral(embedding), thoughtId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Thought not found" });
+      }
+      return res.json(result.rows[0]);
+    } else {
+      const result = await db.query(
+        `UPDATE thoughts 
+         SET thought_date = COALESCE($1, thought_date)
+         WHERE id = $2 RETURNING *`,
+        [thought_date, thoughtId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: "Thought not found" });
+      }
+      return res.json(result.rows[0]);
     }
-    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Database error" });
@@ -259,17 +279,31 @@ app.put("/notes/:noteId", async (req: Request, res: Response) => {
   try {
     const { noteId } = req.params;
     const { content, note_date } = req.body;
-    const result = await db.query(
-      `UPDATE book_notes 
-       SET content = COALESCE($1, content), 
-           note_date = COALESCE($2, note_date) 
-       WHERE id = $3 RETURNING *`,
-      [content, note_date, noteId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Note not found" });
+
+    if (typeof content === "string" && content.trim() !== "") {
+      const embedding = await embedText(content);
+      const result = await db.query(
+        `UPDATE book_notes
+         SET content = $1,
+             note_date = COALESCE($2, note_date),
+             embedding = $3::vector
+         WHERE id = $4
+         RETURNING *`,
+        [content, note_date, toPgVectorLiteral(embedding), noteId]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: "Note not found" });
+      return res.json(result.rows[0]);
+    } else {
+      const result = await db.query(
+        `UPDATE book_notes
+         SET note_date = COALESCE($1, note_date)
+         WHERE id = $2
+         RETURNING *`,
+        [note_date, noteId]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: "Note not found" });
+      return res.json(result.rows[0]);
     }
-    res.json(result.rows[0]);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Database error" });
@@ -310,6 +344,28 @@ app.get("/thoughts/search", async (req: Request, res: Response) => {
       [toPgVectorLiteral(qEmbedding)]
     );
 
+    res.json(rows.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Search error" });
+  }
+});
+
+app.get("/books/:bookId/notes/search", async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const q = String(req.query.q ?? "").trim();
+    if (!q) return res.json([]);
+
+    const qEmbedding = await embedText(q);
+    const rows = await db.query(
+      `SELECT id, content, note_date
+       FROM book_notes
+       WHERE book_id = $2 AND embedding IS NOT NULL
+       ORDER BY embedding <-> $1::vector
+       LIMIT 20`,
+      [toPgVectorLiteral(qEmbedding), bookId]
+    );
     res.json(rows.rows);
   } catch (error) {
     console.error(error);
