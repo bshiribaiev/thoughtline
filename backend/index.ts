@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import pg from "pg";
 import dotenv from "dotenv";
+import { embedText, toPgVectorLiteral } from "./embeddings.js";
 
 dotenv.config()
 
@@ -148,11 +149,15 @@ app.get("/books/:bookId/notes", async (req: Request, res: Response) => {
 app.post("/thoughts", async (req: Request, res: Response) => {
   try {
     const { content, thought_date } = req.body;
-    const result = await db.query( 
-      `INSERT INTO thoughts (content, thought_date) 
-       VALUES ($1, COALESCE($2, CURRENT_DATE)) RETURNING *`,
-      [content, thought_date]
+    const embedding = await embedText(content);
+
+    const result = await db.query(
+      `INSERT INTO thoughts (content, thought_date, embedding)
+       VALUES ($1, COALESCE($2, CURRENT_DATE), $3::vector)
+       RETURNING *`,
+      [content, thought_date, toPgVectorLiteral(embedding)]
     );
+
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error(error);
@@ -286,6 +291,29 @@ app.delete("/notes/:noteId", async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Semantic search
+app.get("/thoughts/search", async (req: Request, res: Response) => {
+  try {
+    const q = String(req.query.q ?? "").trim();
+    if (!q) return res.json([]);
+
+    const qEmbedding = await embedText(q);
+    const rows = await db.query(
+      `SELECT id, content, thought_date
+       FROM thoughts
+       WHERE embedding IS NOT NULL
+       ORDER BY embedding <-> $1::vector
+       LIMIT 20`,
+      [toPgVectorLiteral(qEmbedding)]
+    );
+
+    res.json(rows.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Search error" });
   }
 });
 
