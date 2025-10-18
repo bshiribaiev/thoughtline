@@ -6,7 +6,14 @@ export async function embedText(text: string): Promise<number[]> {
     model: "text-embedding-3-small",
     input: text,
   });
-  const embedding = res.data?.[0]?.embedding;
+  
+  let embedding;
+  if (res.data != null && res.data[0] != null) {
+    embedding = res.data[0].embedding;
+  } else {
+    embedding = undefined;
+  }
+
   if (!embedding) {
     throw new Error("Failed to generate embedding: empty response from OpenAI");
   }
