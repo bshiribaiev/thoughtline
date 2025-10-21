@@ -373,6 +373,43 @@ app.get("/books/:bookId/notes/search", async (req: Request, res: Response) => {
   }
 });
 
+// Search endpoint
+app.get("/search", async (req: Request, res: Response) => {
+  try {
+    const q = String(req.query.q ?? "").trim();
+    if (!q) return res.json([]);
+
+    const qEmbedding = await embedText(q);
+    const rows = await db.query(
+      `
+      SELECT * FROM (
+        SELECT 
+          id, content, thought_date AS date, 'thought' AS kind,
+          (embedding <-> $1::vector) AS distance
+        FROM thoughts
+        WHERE embedding IS NOT NULL
+
+        UNION ALL
+
+        SELECT 
+          id, content, note_date AS date, 'note' AS kind,
+          (embedding <-> $1::vector) AS distance
+        FROM book_notes
+        WHERE embedding IS NOT NULL
+      ) AS combined
+      ORDER BY distance
+      LIMIT 20
+      `,
+      [toPgVectorLiteral(qEmbedding)]
+    );
+
+    res.json(rows.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Search error" });
+  }
+});
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`)
 })
