@@ -12,7 +12,6 @@ type Item = {
 
 export default function Chat() {
     const [q, setQ] = useState("");
-    const [results, setResults] = useState<Item[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [lastQ, setLastQ] = useState("");
@@ -21,7 +20,7 @@ export default function Chat() {
 
     async function run() {
         const query = q.trim();
-        if (!query) return; // no-op on empty
+        if (!query) return; 
 
         setLoading(true);
         try {
