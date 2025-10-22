@@ -415,7 +415,7 @@ app.get("/search", async (req: Request, res: Response) => {
 app.post("/chat", async (req: Request, res: Response) => {
   try {
     const q = String(req.body?.q ?? "").trim();
-    if (!q) return res.status(400).json({ error: "Missing q" });
+    if (!q) return res.status(400).json({ error: "Missing query" });
 
     const qEmbedding = await embedText(q);
     const { rows: ctx } = await db.query(
@@ -435,11 +435,11 @@ app.post("/chat", async (req: Request, res: Response) => {
 
     const context = ctx.map(r => `[${r.kind} ${r.date}] ${r.content}`).join("\n");
 
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // or "gemini-1.5-pro"
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
 
     const prompt =
-      "You are the user's personal thinking companion. Ground answers strictly in the user's notes below. " +
+      "You are my personal thinking companion. Ground answers strictly in the user's notes below. " +
       "If unsure, say you don't know. Cite like [thought 2025-10-05] when relevant. Be concise.\n\n" +
       `Question: ${q}\n\nUser notes:\n${context}`;
 
