@@ -2,6 +2,7 @@ import express, { type Request, type Response } from 'express';
 import pg from "pg";
 import dotenv from "dotenv";
 import { embedText, toPgVectorLiteral } from "./embeddings.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config()
 
@@ -407,6 +408,48 @@ app.get("/search", async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Search error" });
+  }
+});
+
+// Gemini chat endpoint
+app.post("/chat", async (req: Request, res: Response) => {
+  try {
+    const q = String(req.body?.q ?? "").trim();
+    if (!q) return res.status(400).json({ error: "Missing q" });
+
+    const qEmbedding = await embedText(q);
+    const { rows: ctx } = await db.query(
+      `
+      SELECT * FROM (
+        SELECT id, content, thought_date AS date, 'thought' AS kind, (embedding <-> $1::vector) AS distance
+        FROM thoughts WHERE embedding IS NOT NULL
+        UNION ALL
+        SELECT id, content, note_date   AS date, 'note'    AS kind, (embedding <-> $1::vector) AS distance
+        FROM book_notes WHERE embedding IS NOT NULL
+      ) AS combined
+      ORDER BY distance
+      LIMIT 12
+      `,
+      [toPgVectorLiteral(qEmbedding)]
+    );
+
+    const context = ctx.map(r => `[${r.kind} ${r.date}] ${r.content}`).join("\n");
+
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // or "gemini-1.5-pro"
+
+    const prompt =
+      "You are the user's personal thinking companion. Ground answers strictly in the user's notes below. " +
+      "If unsure, say you don't know. Cite like [thought 2025-10-05] when relevant. Be concise.\n\n" +
+      `Question: ${q}\n\nUser notes:\n${context}`;
+
+    const result = await model.generateContent([{ text: prompt }]);
+    const answer = result.response.text();
+
+    res.json({ answer, sources: ctx.slice(0, 5) });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Chat error" });
   }
 });
 
