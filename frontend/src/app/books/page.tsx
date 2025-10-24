@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
+import Link from "next/link";
 
 type Book = { id: number; name: string; created_at: string };
 type Note = { id: number; book_id: number; content: string; note_date: string };
@@ -113,9 +114,9 @@ export default function Books() {
             {books.map((b) => (
               <li key={b.id}>
                 <span className={styles.formRow}>
-                  <button className={styles.linkButton} onClick={() => { handleSelectBook(b.id); }}>
+                  <Link className={styles.linkButton} href={`/books/${b.id}`}>
                     {b.name}
-                  </button>
+                  </Link>
                   <button
                     className={styles.button}
                     onClick={() => setConfirmBookId(b.id)}
@@ -161,6 +162,7 @@ export default function Books() {
           )}
           {!selectedBookId && <p>Select a book to view/add notes.</p>}
         </section>
+
         {confirmBookId !== null && (
         <div className={styles.modalBackdrop} role="dialog" aria-modal="true">
           <div className={styles.modal}>
