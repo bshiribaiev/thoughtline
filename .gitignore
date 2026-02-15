@@ -61,6 +61,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+plan.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+claude.md
+
+backend v0
+frontend v0
+phase1.md
